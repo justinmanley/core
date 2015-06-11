@@ -128,6 +128,11 @@ dotted clr =
   { defaultLine | color <- clr, dashing <- [3,3] }
 
 
+type Shape 
+    = Shape (List (Float, Float))
+    | ShapeGroup (List Shape) 
+
+
 type BasicForm
     = FPath LineStyle Path
     | FShape ShapeStyle Shape
@@ -288,8 +293,6 @@ segment p1 p2 =
   [p1,p2]
 
 
-type alias Shape = List (Float,Float)
-
 
 {-| Create an arbitrary polygon by specifying its corners in order.
 `polygon` will automatically close all shapes, so the given list
@@ -297,7 +300,7 @@ of points does not need to start and end with the same position.
 -}
 polygon : List (Float,Float) -> Shape
 polygon points =
-  points
+  Shape points
 
 {-| A rectangle with a given width and height. -}
 rect : Float -> Float -> Shape
@@ -305,7 +308,7 @@ rect w h =
   let hw = w/2
       hh = h/2
   in
-      [ (0-hw,0-hh), (0-hw,hh), (hw,hh), (hw,0-hh) ]
+      Shape [ (0-hw,0-hh), (0-hw,hh), (hw,hh), (hw,0-hh) ]
 
 
 {-| A square with a given edge length. -}
@@ -323,7 +326,7 @@ oval w h =
       hh = h/2
       f i = (hw * cos (t*i), hh * sin (t*i))
   in
-      List.map f [0..n-1]
+      Shape <| List.map f [0..n-1]
 
 
 {-| A circle with a given radius. -}
@@ -344,7 +347,16 @@ ngon n r =
       t = 2 * pi / m
       f i = ( r * cos (t*i), r * sin (t*i) )
   in
-      List.map f [0..m-1]
+      Shape <| List.map f [0..m-1]
+
+{-| Assemble a list of shapes into a single shape that will be styled as a single unit. Allows shapes with holes to be created. -}
+shapeGroup : List Shape -> Shape
+shapeGroup shapes = 
+  ShapeGroup <| case shapes of
+    []   -> []
+    s:ss -> case s of
+      ShapeGroup ss' -> ss' ++ shapeGroup ss
+      _              -> s
 
 {-| Create some text. Details like size and color are part of the `Text` value
 itself, so you can mix colors and sizes and fonts easily.

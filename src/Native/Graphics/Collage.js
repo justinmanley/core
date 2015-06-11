@@ -359,18 +359,10 @@ Elm.Native.Graphics.Collage.make = function(localRuntime) {
 				break;
 
 			case 'FShape':
-				if (f._0.ctor === 'Line')
-				{
-					f._1.closed = true;
-					drawLine(ctx, f._0._0, f._1);
-				}
-				else
-				{
-					drawShape(redo, ctx, f._0._0, f._1);
-				}
-				break;
+                renderShape(ctx, f._0)
+                break;
 
-			case 'FText':
+            case 'FText':
 				fillText(redo, ctx, f._0);
 				break;
 
@@ -380,6 +372,47 @@ Elm.Native.Graphics.Collage.make = function(localRuntime) {
 		}
 		ctx.restore();
 	}
+
+    function renderShape(ctx, shape) 
+    {
+        switch (shape.ctor)
+        {
+            case 'Shape':
+                if (shape._0.ctor === 'Line')
+				{
+					shape._1.closed = true;
+					drawLine(ctx, shape._0._0, shape._1);
+				}
+				else
+				{
+					drawShape(redo, ctx, shape._0._0, shape._1);
+				}
+				break;
+
+            case 'ShapeGroup':
+                var shapes = List.toArray(shape._1);
+                if (shape._0.ctor === 'Line')
+                {
+                    for (var i = 0, l = shapes.length; i < l; i++)
+                    {
+                        shapes[i]._1.closed = true;
+                        drawLine(ctx, shape._0._0, shape._1);
+                    }
+                }
+                else 
+                {
+                    for (var i = 0, l = shapes.length; i < l; i++) 
+                    {
+                        trace(ctx, shapes[i]);    
+                    }
+
+                    setFillStyle(ctx, shape._0._0);
+                    ctx.scale(1,-1);
+                    ctx.fill();
+                }
+                break;
+        }         
+    }
 
 	function formToMatrix(form)
 	{
